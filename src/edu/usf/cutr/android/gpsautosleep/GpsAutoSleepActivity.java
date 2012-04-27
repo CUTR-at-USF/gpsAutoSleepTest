@@ -150,6 +150,9 @@ public class GpsAutoSleepActivity extends Activity implements GpsTestActivity.Su
             if(!result){
               Toast toast = Toast.makeText(GpsAutoSleepActivity.this, "set_auto_sleep_parameters - returned false", Toast.LENGTH_SHORT);
               toast.show();
+            }else{
+              Toast toast = Toast.makeText(GpsAutoSleepActivity.this, "Submitted new settings", Toast.LENGTH_SHORT);
+              toast.show();
             }
             
             //Print out current state machine parameters that the platform put in the extras bundle
