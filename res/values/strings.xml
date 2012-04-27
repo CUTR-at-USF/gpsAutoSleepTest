@@ -18,14 +18,15 @@
 */
 -->
 <resources>
-    <string name="app_name">GPS Test</string>
+    <string name="app_name">GPS Auto-Sleep Test</string>
 
     <string name="gps_status_tab">Status</string>
     <string name="gps_map_tab">Map</string>
     <string name="gps_sky_tab">Sky</string>
+    <string name="gps_auto_sleep_tab">Settings</string>
 
-    <string name="gps_start">Start</string>
-    <string name="gps_stop">Stop</string>
+    <string name="gps_start">Start Auto-Sleep</string>
+    <string name="gps_stop">Stop Auto-Sleep</string>
     <string name="delete_aiding_data">Clear Aiding Data</string>
     <string name="send_location">Send Location</string>
     <string name="set_fix_frequency">Set Fix Frequency</string>
@@ -51,6 +52,7 @@
     <string name="gps_accuracy_label">Acc: </string>
     <string name="gps_speed_label">Speed: </string>
     <string name="gps_bearing_label">Bearing: </string>
+    <string name="time_since_last_fix_label">TS Last Fix: </string>
 
     <string name="gps_prn_column_label">PRN</string>
     <string name="gps_snr_column_label">SNR</string>

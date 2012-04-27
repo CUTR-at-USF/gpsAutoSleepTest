@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.gpstest;
+package edu.usf.cutr.android.gpsautosleep;
 
 import android.app.Activity;
 import android.content.Context;

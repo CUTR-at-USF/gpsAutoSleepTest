@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.gpstest;
+package edu.usf.cutr.android.gpsautosleep;
 
 import android.app.TabActivity;
 import android.content.Context;
@@ -32,9 +32,22 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.TabHost;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
+/**
+ * This Activity contains several sub activities to show different GPS info.
+ * The intent of this application is to allow a user to test different GPS Auto-Sleep 
+ * settings.
+ * 
+ * More info on GPS Auto-Sleep here:
+ * http://www.locationaware.usf.edu/ongoing-research/technology/gps-auto-sleep/
+ * 
+ * @author lockwood
+ * @author barbeau (GPS Auto Sleep integration)
+ *
+ */
 public class GpsTestActivity extends TabActivity
         implements LocationListener, GpsStatus.Listener {
     private static final String TAG = "GpsTestActivity";
@@ -62,28 +75,28 @@ public class GpsTestActivity extends TabActivity
         mSubActivities.add(activity);
     }
 
-    private void gpsStart() {
-        if (!mStarted) {
-            mService.requestLocationUpdates(mProvider.getName(), 1000, 0.0f, this);
-            mStarted = true;
-        }
-        for (SubActivity activity : mSubActivities) {
-            activity.gpsStart();
-        }
-    }
+//    private void gpsStart() {
+//        if (!mStarted) {
+//            mService.requestLocationUpdates(mProvider.getName(), 1000, 0.0f, this);
+//            mStarted = true;
+//        }
+//        for (SubActivity activity : mSubActivities) {
+//            activity.gpsStart();
+//        }
+//    }
+//    
+//    private void gpsStop() {
+//        if (mStarted) {
+//            mService.removeUpdates(this);
+//            mStarted = false;
+//        }
+//        for (SubActivity activity : mSubActivities) {
+//            activity.gpsStop();
+//        }
+//    }
 
-    private void gpsStop() {
-        if (mStarted) {
-            mService.removeUpdates(this);
-            mStarted = false;
-        }
-        for (SubActivity activity : mSubActivities) {
-            activity.gpsStop();
-        }
-    }
-
-    private void sendExtraCommand(String command) {
-        mService.sendExtraCommand(LocationManager.GPS_PROVIDER, command, null);
+    public boolean sendExtraCommand(String command, Bundle extras) {
+        return mService.sendExtraCommand(LocationManager.GPS_PROVIDER, command, extras);
     }
 
     /** Called when the activity is first created. */
@@ -114,6 +127,13 @@ public class GpsTestActivity extends TabActivity
         tabHost.addTab(tabHost.newTabSpec("tab3")
                 .setIndicator(res.getString(R.string.gps_sky_tab))
                 .setContent(new Intent(this, GpsSkyActivity.class)));
+        
+        tabHost.addTab(tabHost.newTabSpec("tab4")
+            .setIndicator(res.getString(R.string.gps_auto_sleep_tab))
+            .setContent(new Intent(this, GpsAutoSleepActivity.class)));
+        
+        //Always start GPS on startup
+        mService.requestLocationUpdates(mProvider.getName(), 1000, 0.0f, this);
     }
 
     @Override
@@ -156,14 +176,14 @@ public class GpsTestActivity extends TabActivity
         switch (item.getItemId()) {
             case R.id.gps_start:
                 if (mStarted) {
-                    gpsStop();
+                    stopAutoSleep();
                 } else {
-                    gpsStart();
+                    startAutoSleep();
                 }
                 return true;
 
             case R.id.delete_aiding_data:
-                sendExtraCommand("delete_aiding_data");
+                sendExtraCommand("delete_aiding_data", null);
                 return true;
 
             case R.id.send_location:
@@ -171,11 +191,11 @@ public class GpsTestActivity extends TabActivity
                 return true;
 
             case R.id.force_time_injection:
-                sendExtraCommand("force_time_injection");
+                sendExtraCommand("force_time_injection", null);
                 return true;
 
             case R.id.force_xtra_injection:
-                sendExtraCommand("force_xtra_injection");
+                sendExtraCommand("force_xtra_injection", null);
                 return true;
         }
 
@@ -225,5 +245,37 @@ public class GpsTestActivity extends TabActivity
             intent.putExtra(Intent.EXTRA_TEXT, location);
             startActivity(intent);
         }
+    }
+    
+    /**
+     * Start the GPS Auto-Sleep feature
+     */    
+    private void startAutoSleep(){
+      if (!mStarted) {
+        
+        boolean result = sendExtraCommand("start_auto_sleep", null);
+        mStarted = true;
+
+        if(!result){
+          Toast toast = Toast.makeText(this, "start_auto_sleep - returned false", Toast.LENGTH_SHORT);
+          toast.show();
+        }
+        
+      }
+    }
+    
+    /**
+     * Stop the GPS Auto-Sleep feature
+     */  
+    private void stopAutoSleep(){
+      if (mStarted) {
+        boolean result = sendExtraCommand("stop_auto_sleep", null);
+        mStarted = false;
+        
+        if(!result){
+          Toast toast = Toast.makeText(this, "stop_auto_sleep - returned false", Toast.LENGTH_SHORT);
+          toast.show();
+        }
+      }
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.gpstest;
+package edu.usf.cutr.android.gpsautosleep;
 
 import android.app.Activity;
 import android.content.Context;
@@ -33,6 +33,7 @@ import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.TextView;
 
+import java.util.Date;
 import java.util.Iterator;
 
 public class GpsStatusActivity extends Activity implements GpsTestActivity.SubActivity {
@@ -48,6 +49,7 @@ public class GpsStatusActivity extends Activity implements GpsTestActivity.SubAc
     private TextView mAccuracyView;
     private TextView mSpeedView;
     private TextView mBearingView;
+    private TextView mTimeSinceLastFix;
     private SvGridAdapter mAdapter;
 
     private int mSvCount;
@@ -69,6 +71,10 @@ public class GpsStatusActivity extends Activity implements GpsTestActivity.SubAc
     private static final int COLUMN_COUNT = 5;
 
     private static final String EMPTY_LAT_LONG = "             ";
+    
+    Location lastLocation = new Location("Last Location");
+    
+    private int fixCount = 0;
 
     private static String doubleToString(double value, int decimals) {
         String result = Double.toString(value);
@@ -84,6 +90,13 @@ public class GpsStatusActivity extends Activity implements GpsTestActivity.SubAc
     }
 
     public void onLocationChanged(Location location) {
+        fixCount++;
+        
+        if(fixCount > 1){          
+          mTimeSinceLastFix.setText( (location.getTime() - lastLocation.getTime())/1000 + "s");
+        }
+      
+        lastLocation = location;
         mLatitudeView.setText(doubleToString(location.getLatitude(), 7) + " ");
         mLongitudeView.setText(doubleToString(location.getLongitude(), 7) + " ");
         mFixTime = location.getTime();
@@ -220,6 +233,7 @@ public class GpsStatusActivity extends Activity implements GpsTestActivity.SubAc
         mAccuracyView = (TextView)findViewById(R.id.accuracy);
         mSpeedView = (TextView)findViewById(R.id.speed);
         mBearingView = (TextView)findViewById(R.id.bearing);
+        mTimeSinceLastFix = (TextView)findViewById(R.id.time_since_last_fix);
 
         mLatitudeView.setText(EMPTY_LAT_LONG);
         mLongitudeView.setText(EMPTY_LAT_LONG);

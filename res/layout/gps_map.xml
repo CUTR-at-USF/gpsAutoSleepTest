@@ -28,8 +28,17 @@
         android:layout_weight="1"
         android:clickable="true"
         android:enabled="true"
-        android:apiKey="0Pp-fMartm037L5AZ-qYVYkWhvFHp5PVa_CaG4A"
+        android:apiKey="0AOU0tZT-iO4RbjepBnhqZORUKPuD1PvL1S4Ouw"
         />
+    <!-- key for debug - 0AOU0tZT-iO4pMOEz2bc38edqSZzR1ZfPp43BAw
+        certificate md5: 4A:FE:7B:3A:A8:0B:A3:40:BB:02:E9:39:FF:87:22:9F
+      This is the debug cert on Sean Barbeau's machine.
+      
+      For APK signing - 0AOU0tZT-iO4RbjepBnhqZORUKPuD1PvL1S4Ouw
+      md5 - A6:4E:3C:0F:A2:B1:8A:CE:F5:3B:43:1E:D9:AE:8D:43
+      This is the main CUTR cert
+      
+     -->
 
         <LinearLayout
             android:id="@+id/bottom"
