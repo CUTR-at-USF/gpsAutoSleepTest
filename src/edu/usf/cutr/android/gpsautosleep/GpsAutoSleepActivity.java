@@ -158,15 +158,15 @@ public class GpsAutoSleepActivity extends Activity implements GpsTestActivity.Su
             //Print out current state machine parameters that the platform put in the extras bundle
             Log.d(TAG, "--- Current Auto-Sleep Settings --- ");
             Log.d(TAG, "Intervals: " + extras.getString("interval"));
-            Log.d(TAG, "First Fix Timeout: " + extras.getString("first_fix_timeout"));
-            Log.d(TAG, "High Speed Threshold: " + extras.getString("high_speed_threshold"));
-            Log.d(TAG, "Hor. Acc. Threshold: " + extras.getString("hor_acc_threshold"));
-            Log.d(TAG, "Low Speed Threshold: " + extras.getString("low_speed_threshold"));
-            Log.d(TAG, "Back Off Timer - Hor. Acc. Threshold: " + extras.getString("back_off_timer_hor_acc_threshold"));
-            Log.d(TAG, "Back Off Timer - Time Threshold: " + extras.getString("back_off_timer_time_threshold"));
-            Log.d(TAG, "Back Off Timer - Possible Move Threshold: " + extras.getString("back_off_timer_possible_move_threshold"));
-            Log.d(TAG, "Back Off Timer - Probable Move Threshold: " + extras.getString("back_off_timer_probable_move_threshold"));
-            Log.d(TAG, "Back Off Timer - Certain Move Threshold: " + extras.getString("back_off_timer_certain_move_threshold"));            
+            Log.d(TAG, "First Fix Timeout: " + extras.getLong("first_fix_timeout"));
+            Log.d(TAG, "High Speed Threshold: " + extras.getFloat("high_speed_threshold"));
+            Log.d(TAG, "Hor. Acc. Threshold: " + extras.getFloat("hor_acc_threshold"));
+            Log.d(TAG, "Low Speed Threshold: " + extras.getFloat("low_speed_threshold"));
+            Log.d(TAG, "Back Off Timer - Hor. Acc. Threshold: " + extras.getInt("back_off_timer_hor_acc_threshold"));
+            Log.d(TAG, "Back Off Timer - Time Threshold: " + extras.getLong("back_off_timer_time_threshold"));
+            Log.d(TAG, "Back Off Timer - Possible Move Threshold: " + extras.getFloat("back_off_timer_distance_possible_move_threshold"));
+            Log.d(TAG, "Back Off Timer - Probable Move Threshold: " + extras.getFloat("back_off_timer_distance_probable_move_threshold"));
+            Log.d(TAG, "Back Off Timer - Certain Move Threshold: " + extras.getFloat("back_off_timer_distance_certain_move_threshold"));            
             
           }
         });
