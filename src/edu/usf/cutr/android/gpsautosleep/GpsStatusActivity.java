@@ -93,7 +93,7 @@ public class GpsStatusActivity extends Activity implements GpsTestActivity.SubAc
         fixCount++;
         
         if(fixCount > 1){          
-          mTimeSinceLastFix.setText( (location.getTime() - lastLocation.getTime())/1000 + "s");
+          mTimeSinceLastFix.setText( (location.getTime() - lastLocation.getTime())/1000 + "s\tFix Count: "+fixCount);
         }
       
         lastLocation = location;

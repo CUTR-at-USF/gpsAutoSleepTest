@@ -16,9 +16,22 @@
 
 package edu.usf.cutr.android.gpsautosleep;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import android.app.AlertDialog;
 import android.app.TabActivity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.location.GpsStatus;
 import android.location.Location;
@@ -26,15 +39,16 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.net.Uri;
+import android.os.BatteryManager;
 import android.os.Bundle;
+import android.os.Environment;
+import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.TabHost;
 import android.widget.Toast;
-
-import java.util.ArrayList;
 
 /**
  * This Activity contains several sub activities to show different GPS info.
@@ -52,12 +66,43 @@ public class GpsTestActivity extends TabActivity
         implements LocationListener, GpsStatus.Listener {
     private static final String TAG = "GpsTestActivity";
 
+
+	private boolean isRecording = false;
+    private int currentInterval = -1;
+    private int fixCount = 0;
     private LocationManager mService;
     private LocationProvider mProvider;
     private GpsStatus mStatus;
     private ArrayList<SubActivity> mSubActivities = new ArrayList<SubActivity>();
     boolean mStarted;
     private Location mLastLocation;
+    private float curBattLevel = -1;
+    private BroadcastReceiver batteryReceiver;
+    private File root;
+    private File fileDir;
+    private File file;
+    private FileWriter filewriter;
+    private BufferedWriter out;
+    private final Timer outputFileTimer = new Timer();
+    private long lastFixTime = System.currentTimeMillis();
+    
+    private TimerTask write2File = new TimerTask() {
+
+		@Override
+		public void run() {
+			try {
+				out.write(Calendar.getInstance().get(Calendar.HOUR)+":"+Calendar.getInstance().get(Calendar.MINUTE)
+						+":"+Calendar.getInstance().get(Calendar.SECOND)+","+fixCount+","+((lastFixTime > 0)?DateUtils.getRelativeTimeSpanString(
+								lastFixTime, mLastLocation.getTime(), DateUtils.SECOND_IN_MILLIS):-1)+","+curBattLevel);
+				;
+				out.newLine();
+			} catch (Exception e) {
+				
+			}
+			
+		}
+    	
+    };
 
     private static GpsTestActivity sInstance;
 
@@ -98,7 +143,55 @@ public class GpsTestActivity extends TabActivity
     public boolean sendExtraCommand(String command, Bundle extras) {
         return mService.sendExtraCommand(LocationManager.GPS_PROVIDER, command, extras);
     }
+    
+    private void startRecording() {
+    	if(isRecording == true)
+    		return;
+        isRecording = !isRecording;
+    	root = Environment.getExternalStorageDirectory();
 
+		//check sdcard permission
+    	try {
+    		if (root.canWrite()){ 
+
+    			fileDir = new File(root.getAbsolutePath()+"/battery_data/");  
+    			fileDir.mkdirs();  
+
+    			file= new File(fileDir, "outputFile.csv");  
+    			filewriter = new FileWriter(file);  
+    			out = new BufferedWriter(filewriter);
+    			out.write("Current Interval: "+currentInterval);
+    			out.newLine();
+    			out.write((new Date()).toString()+"-> STARTED\n--------------------------------------------------------------------------------\n");
+    			out.write("Time, Fixes, LastFix, Level\n");
+    			/*
+    		     * After 60 seconds, write battery level & other info. to file
+    		     */
+    		    outputFileTimer.schedule(write2File,1000 * 10, 1000 * 10);
+    		}
+    	}
+    	catch(Exception e) {
+    		Log.d(TAG,"Failed to create file");
+    		return;
+    	}
+    }
+    private void stopRecording() {
+    	if(isRecording == false)
+    		return;
+        isRecording = !isRecording;
+    	try {
+    		write2File.cancel();
+    		write2File = null;
+    		outputFileTimer.cancel();
+    		outputFileTimer.purge();
+    		out.write("--------------------------------------------------------------------------------\n"+(new Date()).toString()+"-> COMPLETED");
+    		out.flush();
+    		out.close();
+    		filewriter.close();
+    	}
+    	catch (Exception e) {
+    	}
+    }
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle icicle) {
@@ -132,14 +225,34 @@ public class GpsTestActivity extends TabActivity
             .setIndicator(res.getString(R.string.gps_auto_sleep_tab))
             .setContent(new Intent(this, GpsAutoSleepActivity.class)));
         
+        
+        /*
+         * Creates a Receiver to listen to changes in the battery state
+         *  sets curBattLevel to current battery level
+         */
+        batteryReceiver = new BroadcastReceiver() {
+          @Override
+          public void onReceive(Context context, Intent intent) {
+            curBattLevel=((float)intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1))/intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)*100;
+            //Log.d(TRACITConstants.TAG,"Current Battery Level: "+curBattLevel);
+          }
+        }; 
+        IntentFilter filter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+        registerReceiver(batteryReceiver, filter);
+        
+        
+        
         //Always start GPS on startup
-        mService.requestLocationUpdates(mProvider.getName(), 1000, 0.0f, this);
+        currentInterval = 300;
+        mService.requestLocationUpdates(mProvider.getName(), currentInterval*1000, 0.0f, this);
     }
 
     @Override
     protected void onDestroy() {
         mService.removeGpsStatusListener(this);
         mService.removeUpdates(this);
+        unregisterReceiver(batteryReceiver);
+        stopRecording();
         super.onDestroy();
     }
 
@@ -181,7 +294,64 @@ public class GpsTestActivity extends TabActivity
                     startAutoSleep();
                 }
                 return true;
+            case R.id.change:
+            	final LocationListener o = this;
+            	AlertDialog.Builder builder2 = new AlertDialog.Builder(this);
+            	builder2.setMessage("Record or Change Interval?")
+            	       .setPositiveButton(isRecording?"Stop Recording":"Start Recording", new DialogInterface.OnClickListener() {
+            	           public void onClick(DialogInterface dialog, int id) {
+            	                if(!isRecording)
+            	                	startRecording();
+            	                else
+            	                	stopRecording();
+            	           }
+            	       })
+            	       .setNegativeButton("Change Interval", new DialogInterface.OnClickListener() {
+            	           public void onClick(DialogInterface dialog, int id) {
+            	        	   final CharSequence[] intervals = {"4","8","15","30","60","150","300"};
+            	            	mService.removeUpdates(o);//Try without removing updates
+            	            	AlertDialog.Builder builder = new AlertDialog.Builder((Context) o);
+            	            	builder.setTitle("Pick an interval");
+            	            	builder.setCancelable(false);
+            	            	builder.setItems(intervals, new DialogInterface.OnClickListener() {
+            	            	    public void onClick(DialogInterface dialog, int item) {
+            	            	        Toast.makeText(getApplicationContext(), intervals[item], Toast.LENGTH_SHORT).show();
+            	            	        currentInterval =  Integer.parseInt(intervals[item].toString());
+            							mService.requestLocationUpdates(mProvider.getName(),currentInterval*1000,0.0f, o);
+            	            	    }
+            	            	});
+            	            	AlertDialog alert = builder.create();
+            	            	alert.show();
+            	           }
+            	           /*
+            	            	        	AlertDialog.Builder alert = new AlertDialog.Builder((Context) o);
 
+                	            	        alert.setTitle("Interval: "); 
+                	            	        //alert.setMessage("Enter page number:"); 
+
+                	            	        // Set an EditText view to get user input 
+                	            	        final EditText input = new EditText((Context) o);
+                	            	        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+                	            	        alert.setView(input);
+
+                	            	        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                	            	        public void onClick(DialogInterface dialog, int whichButton) {
+                	            	            currentInterval = Integer.parseInt(input.getText().toString());
+                	            	        }
+                	            	        });
+                	            	        alert.show();
+            	            */
+            	       });
+            	AlertDialog alert2 = builder2.create();
+            	alert2.show();
+            	
+            	
+            	
+            	
+            	
+            	
+            	return true;
+            	
             case R.id.delete_aiding_data:
                 sendExtraCommand("delete_aiding_data", null);
                 return true;
@@ -203,6 +373,8 @@ public class GpsTestActivity extends TabActivity
     }
 
     public void onLocationChanged(Location location) {
+    	++fixCount;
+    	lastFixTime = location.getTime();
         mLastLocation = location;
 
         for (SubActivity activity : mSubActivities) {

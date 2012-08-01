@@ -30,5 +30,6 @@
 
     <item android:id="@+id/force_xtra_injection"
         android:title="@string/force_xtra_injection" />
+    <item android:id="@+id/change" android:title='Testing Settings'></item>
 
 </menu>
